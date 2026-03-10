@@ -86,6 +86,8 @@ public:
     }
 
     void start(const cv::Mat& refImg, const QStringList& files, const QDir& dir, const QVector<QString>& algs);
+    void cancel();
+
     void setROI(cv::Rect roi) { roi4Task = roi; }
     std::shared_ptr<std::atomic<bool>> getPCancelled() const {return m_pCancelled;}
 signals:
@@ -94,9 +96,6 @@ signals:
 
 private slots:
     void onTaskFinished();
-
-public slots:
-    void cancel();
 
 private:
     std::shared_ptr<std::atomic<bool>> m_pCancelled;
@@ -112,11 +111,16 @@ class TaskManager : public QObject
 {
     Q_OBJECT
 public:
-    TaskManager(ResultCollector* rc) : m_collector(rc) {}
+    TaskManager(QString outputPath);
     ProcessingSession* createSession();
+    void setROI(cv::Rect roi) { m_session->setROI(roi); }
+
+public slots:
+    void cancel() { m_session->cancel(); }
 
 private:
     ResultCollector* m_collector;
+    ProcessingSession* m_session;
 };
 
 #endif // TASK_H

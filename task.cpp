@@ -94,11 +94,22 @@ void ProcessingTask::run()
     emit finished();
 }
 
+/**********TaskManager************/
+TaskManager::TaskManager(QString outputPath)
+    : m_collector(new ResultCollector(this)),
+    m_session(createSession())
+{
+    m_collector->setOutputDir(outputPath);
+    m_collector->prepare();
+}
+
 ProcessingSession* TaskManager::createSession()
 {
     return new ProcessingSession(m_collector);
 }
 
+
+/********ProcessingSession********/
 void ProcessingSession::start(const cv::Mat& refImg, const QStringList& files, const QDir& dir, const QVector<QString>& algs)
 {
     m_totalTasks = files.size();
@@ -163,16 +174,16 @@ void ResultCollector::prepare()
     m_expectedResults = 0; // 确保计数器也是干净的
 
     closeAll();
-    if (!m_outputDir.isEmpty()) {
-        QDir dir;
-        if (!dir.exists(m_outputDir)) {
-            // if (dir.mkpath(m_outputDir)) {
-            //     qDebug() << "Created output directory:" << m_outputDir;
-            // } else {
-            //     qDebug() << "Critical: Could not create output directory!";
-            // }
-        }
-    }
+    // if (!m_outputDir.isEmpty()) {
+    //     QDir dir;
+    //     if (!dir.exists(m_outputDir)) {
+    //         if (dir.mkpath(m_outputDir)) {
+    //             qDebug() << "Created output directory:" << m_outputDir;
+    //         } else {
+    //             qDebug() << "Critical: Could not create output directory!";
+    //         }
+    //     }
+    // }
 }
 
 void ResultCollector::closeAll()
