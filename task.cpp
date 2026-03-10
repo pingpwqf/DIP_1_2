@@ -96,16 +96,24 @@ void ProcessingTask::run()
 
 /**********TaskManager************/
 TaskManager::TaskManager(QString outputPath)
-    : m_collector(new ResultCollector(this)),
-    m_session(createSession())
+    : m_collector(new ResultCollector(this))
+    // m_session(createSession())
 {
     m_collector->setOutputDir(outputPath);
     m_collector->prepare();
 }
 
-ProcessingSession* TaskManager::createSession()
+ProcessingSession* TaskManager::execute(const BatchConfig& config)
 {
-    return new ProcessingSession(m_collector);
+    ProcessingSession* session = new ProcessingSession(m_collector);
+    session->setROI(config.roi);
+
+    connect(session, &ProcessingSession::sessionFinished,
+            m_collector, &ResultCollector::closeAll);
+
+    session->start(config.refImg, config.files, config.dir, config.algorithms);
+
+    return session;
 }
 
 

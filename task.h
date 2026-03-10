@@ -22,7 +22,6 @@ public:
 
     void setOutputDir(QString path);
     void prepare(); // 准备工作：检查并创建目录
-    void closeAll();
     void abort();
 
     void resetExpectedCount(int count);
@@ -31,6 +30,7 @@ public:
 public slots:
     // 增加 fileName 参数，让结果知道对应哪张图
     void handleResult(QString algName, QString fileName, double value);
+    void closeAll();
 
 private:
     QMutex m_mutex;
@@ -106,21 +106,25 @@ private:
     int m_totalTasks;
 };
 
+struct BatchConfig {
+    cv::Mat refImg;
+    QStringList files;
+    QDir dir;
+    QVector<QString> algorithms;
+    cv::Rect roi;
+};
+
 // 任务管理器
 class TaskManager : public QObject
 {
     Q_OBJECT
 public:
     TaskManager(QString outputPath);
-    ProcessingSession* createSession();
-    void setROI(cv::Rect roi) { m_session->setROI(roi); }
+    ProcessingSession* execute(const BatchConfig& config);
 
-public slots:
-    void cancel() { m_session->cancel(); }
 
 private:
     ResultCollector* m_collector;
-    ProcessingSession* m_session;
 };
 
 #endif // TASK_H

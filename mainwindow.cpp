@@ -264,38 +264,36 @@ void MainWindow::MainExecute()
     else if(dirOutPath.isEmpty()) QMessageBox::warning(this, "noOutPath",
                              tr("haven't select output path!"));
     else{
-        okBtn->setEnabled(false); // 冻结按钮
-
         taskEngine = std::make_unique<TaskManager>(dirOutPath);
-        ProcessingSession* session = taskEngine->createSession();
-        taskEngine->setROI(currentROI);
+        BatchConfig config;
+        config.roi = currentROI;
+        config.dir = QDir(dirPath);
+        config.files = config.dir.entryList({"*.bmp", "*.png", "*.jpg"}, QDir::Files);
+        config.refImg = imread_safe(filePath);
+        config.refImg = currentROI.width > 0 && currentROI.height > 0 ?
+                     config.refImg(currentROI).clone() : config.refImg;
+
+        selectedChoices.clear();
+        if(actionMSV->isChecked()) selectedChoices.emplaceBack(MSVNAME);
+        if(actionNIPC->isChecked()) selectedChoices.emplaceBack(NIPCNAME);
+        if(actionZNCC->isChecked()) selectedChoices.emplaceBack(ZNCCNAME);
+        if(actionGLCMcorr->isChecked()) selectedChoices.emplaceBack(CORRNAME);
+        if(actionGLCMhomo->isChecked()) selectedChoices.emplaceBack(HOMONAME);
+        if(selectedChoices.isEmpty()) {
+            QMessageBox::warning(this, "noChoice",
+                                 tr("haven't choose any processing method!"));
+            return;
+        }else config.algorithms = selectedChoices;
+
+        ProcessingSession* session = taskEngine->execute(config);
+
+        okBtn->setEnabled(false); // 冻结按钮
         connect(cancelBtn, &QPushButton::clicked, session, &ProcessingSession::cancel);
 
         connect(session, &ProcessingSession::sessionFinished, this, [this, session](){
             okBtn->setEnabled(true); // 解冻
-            // collector.closeAll();               // 关闭文件
-            statusBar()->showMessage(tr("批处理完成！"), 3000);
-
+            statusBar()->showMessage(tr("批处理完成, 已保存文件！"), 3000);
             session->deleteLater(); // 销毁 Session 对象
         });
-
-        QDir dir(dirPath);
-        QStringList files = dir.entryList({"*.bmp", "*.png", "*.jpg"}, QDir::Files);
-        cv::Mat refImg = imread_safe(filePath);
-        refImg = currentROI.width > 0 && currentROI.height > 0 ?
-                     refImg(currentROI).clone() : refImg;
-
-        selectedChoices.clear();
-        if(actionMSV->isChecked())selectedChoices.emplaceBack(MSVNAME);
-        if(actionNIPC->isChecked())selectedChoices.emplaceBack(NIPCNAME);
-        if(actionZNCC->isChecked())selectedChoices.emplaceBack(ZNCCNAME);
-        if(actionGLCMcorr->isChecked())selectedChoices.emplaceBack(CORRNAME);
-        if(actionGLCMhomo->isChecked())selectedChoices.emplaceBack(HOMONAME);
-        // taskEngine->ExecuteSelected(filePath, dirPath, selectedChoices);
-        if(selectedChoices.isEmpty()) {
-            QMessageBox::warning(this, "noChoice",
-                                 tr("haven't choose any processing method!"));
-            okBtn->setEnabled(true);
-        }else session->start(refImg, files, dir, selectedChoices);
     }
 }
