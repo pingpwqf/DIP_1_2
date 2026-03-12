@@ -44,7 +44,8 @@ void ProcessingTask::run()
         // --- 核心改动：应用 ROI ---
         cv::Mat img;
         if (m_roi.width > 0 && m_roi.height > 0) {
-            img = fullImg(m_roi).clone(); // 只处理 ROI 区域
+            img = fullImg(m_roi).clone();
+            emit imageReady(img);            // 只处理 ROI 区域
         } else {
             img = fullImg;
         }
@@ -167,9 +168,7 @@ void ProcessingSession::cancel()
     }
 }
 
-/*****************
- *ResultCollector*
- *****************/
+/********ResultCollector********/
 void ResultCollector::setOutputDir(QString path)
 {
     QMutexLocker locker(&m_mutex);

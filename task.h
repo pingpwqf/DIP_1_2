@@ -30,6 +30,7 @@ public:
 public slots:
     // 增加 fileName 参数，让结果知道对应哪张图
     void handleResult(QString algName, QString fileName, double value);
+    void saveImage(cv::InputArray);
     void closeAll();
 
 private:
@@ -70,6 +71,7 @@ private:
 
 signals:
     void resultReady(QString algName, QString fileName, double value);
+    void imageReady(cv::InputArray img);
     void finished();
     void errorOccurred(QString msg);
     void resultsSkipped(unsigned size);
