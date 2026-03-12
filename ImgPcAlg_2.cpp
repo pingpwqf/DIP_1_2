@@ -11,8 +11,12 @@ namespace GLCM
     // 内部辅助：计算相位谱
 static cv::Mat getPhaseSpecInternal(cv::InputArray src, int grayLevels, PaddingStrategy strategy)
 {
-    cv::Mat fSrc;
+    cv::Mat fSrc, mean;
     src.getMat().convertTo(fSrc, CV_32F);
+
+    cv::medianBlur(fSrc, fSrc, 3);
+    cv::blur(fSrc, mean, cv::Size(21, 21));
+    cv::subtract(fSrc, mean, fSrc);
 
     cv::Mat complexImg;
     if (strategy == PaddingStrategy::ToOptimalDFT) {
