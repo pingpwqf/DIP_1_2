@@ -61,7 +61,7 @@ void ProcessingTask::run()
         bool needsGlcm = m_algNames.contains(CORRNAME) || m_algNames.contains(HOMONAME);
 
         if (needsGlcm) {
-            sharedGlcm = GLCM::getPSGLCM(img, 32, 1, 0);
+            sharedGlcm = GLCM::getPSGLCM(img, 32, 0, 5);
         }
 
         for (const QString& algName : m_algNames) {
