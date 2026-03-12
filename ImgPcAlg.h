@@ -3,6 +3,7 @@
 #include <memory>
 #include <cmath>
 #include <stdexcept>
+#include <shared_mutex>
 #include <QVector>
 #include <QString>
 
@@ -154,6 +155,7 @@ public:
     }
 
     std::unique_ptr<AlgInterface> get(T a_name, cv::InputArray img){
+        std::lock_guard<std::shared_mutex> lock(mutex);
         if(storage.find(a_name) != storage.end()) return storage[a_name](img);
         else {
             return nullptr;
@@ -163,6 +165,7 @@ public:
     QVector<T> names() const { return nameList; }
 
 private:
+    std::shared_mutex mutex;
     QVector<T> nameList;
     std::unordered_map<T, Creator> storage;
 };

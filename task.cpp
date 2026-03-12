@@ -280,7 +280,7 @@ void ResultCollector::handleResult(QString algName, QString fileName, double val
 
 void ResultCollector::saveImage(cv::InputArray image, QString fileName, bool ifROI)
 {
-    cv::Mat newImage(image.getMat().clone()), normalized;
+    cv::Mat newImage(image.getMat()), normalized;
     QString outputDir;
     cv::normalize(newImage, normalized, 0, 255, cv::NORM_MINMAX, CV_8U);
 
