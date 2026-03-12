@@ -185,6 +185,8 @@ void ResultCollector::prepare()
     closeAll();
     if (!m_outputDir.isEmpty()) {
         QDir dir;
+        dir.mkpath(m_outputDir+"/RawImages");
+        dir.mkpath(m_outputDir+"/NormalizeImages");
         if (!dir.exists(m_outputDir)) {
             if (dir.mkpath(m_outputDir)) {
                 qDebug() << "Created output directory:" << m_outputDir;
@@ -278,25 +280,24 @@ void ResultCollector::handleResult(QString algName, QString fileName, double val
 
 void ResultCollector::saveImage(cv::InputArray image, QString fileName, bool ifROI)
 {
-    QMutexLocker locker(&m_mutex);
     cv::Mat newImage(image.getMat().clone()), normalized;
-    QDir dir;
+    QString outputDir;
+    cv::normalize(newImage, normalized, 0, 255, cv::NORM_MINMAX, CV_8U);
 
-    if(ifROI){
-        QString rawImagesPath = m_outputDir + "/RawImages";
-
-        if(!dir.exists(rawImagesPath)) dir.mkdir(rawImagesPath);
-
-        QString rawFile = rawImagesPath + "/" + fileName;
-        cv::imwrite(rawFile.toLatin1().data(), newImage);
+    {
+        QMutexLocker locker(&m_mutex);
+        outputDir = m_outputDir;
     }
 
-    QString normalizedImagesPath = m_outputDir + "/NormalizeImages";
+    if(ifROI){
+        QString rawPath = QString("%1/RawImages/%2").arg(outputDir, fileName);
 
-    if(!dir.exists(normalizedImagesPath)) dir.mkdir(normalizedImagesPath);
+        if(!cv::imwrite(rawPath.toStdString(), newImage)) {
+            qDebug() << "Failed to write raw image:" << rawPath;
+        }
+    }
 
-    QString normalizedFile = normalizedImagesPath + "/" +fileName;
-    cv::normalize(newImage, normalized, 0, 255, cv::NORM_MINMAX, CV_8U);
-    cv::imwrite(normalizedFile.toLatin1().data(), normalized);
 
+    QString normPath = QString("%1/NormalizeImages/%2").arg(outputDir, fileName);
+    cv::imwrite(normPath.toStdString(), normalized);
 }
