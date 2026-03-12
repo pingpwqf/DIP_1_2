@@ -182,16 +182,16 @@ void ResultCollector::prepare()
     m_expectedResults = 0; // 确保计数器也是干净的
 
     closeAll();
-    // if (!m_outputDir.isEmpty()) {
-    //     QDir dir;
-    //     if (!dir.exists(m_outputDir)) {
-    //         if (dir.mkpath(m_outputDir)) {
-    //             qDebug() << "Created output directory:" << m_outputDir;
-    //         } else {
-    //             qDebug() << "Critical: Could not create output directory!";
-    //         }
-    //     }
-    // }
+    if (!m_outputDir.isEmpty()) {
+        QDir dir;
+        if (!dir.exists(m_outputDir)) {
+            if (dir.mkpath(m_outputDir)) {
+                qDebug() << "Created output directory:" << m_outputDir;
+            } else {
+                qDebug() << "Critical: Could not create output directory!";
+            }
+        }
+    }
 }
 
 void ResultCollector::closeAll()

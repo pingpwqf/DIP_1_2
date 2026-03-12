@@ -11,6 +11,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QStatusBar>
 #include <QThreadPool>
@@ -25,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
     CreateLabel();
     CreateButton();
     CreateLineEdit();
+    CreateStatusBar();
     CreateGraphicsView();
     CreateLayout();
     resize(500, 300);
@@ -120,6 +122,18 @@ void MainWindow::CreateLineEdit()
     refEdit = new QLineEdit(this);
     sourceEdit = new QLineEdit(this);
     outputEdit = new QLineEdit(this);
+}
+
+void MainWindow::CreateStatusBar()
+{
+    statusLabel = new QLabel(tr(""), this);
+    progressBar = new QProgressBar(this);
+    progressBar->setMaximumWidth(150);
+    progressBar->setVisible(false);
+    progressBar->setTextVisible(false);
+
+    statusBar()->addWidget(statusLabel);
+    statusBar()->addPermanentWidget(progressBar);
 }
 
 void MainWindow::CreateGraphicsView()
@@ -258,11 +272,11 @@ void MainWindow::selectROI()
 void MainWindow::MainExecute()
 {
     if(filePath.isEmpty()) QMessageBox::warning(this, "noRef",
-                             tr("haven't select reference image!"));
+                             tr("未选择参考图像!"));
     else if(dirPath.isEmpty()) QMessageBox::warning(this, "noSource",
-                             tr("haven't select Source images!"));
+                             tr("未选择源图像文件夹!"));
     else if(dirOutPath.isEmpty()) QMessageBox::warning(this, "noOutPath",
-                             tr("haven't select output path!"));
+                             tr("未选择输出文件夹!"));
     else{
         taskEngine = std::make_unique<TaskManager>(dirOutPath);
         BatchConfig config;
@@ -281,18 +295,31 @@ void MainWindow::MainExecute()
         if(actionGLCMhomo->isChecked()) selectedChoices.emplaceBack(HOMONAME);
         if(selectedChoices.isEmpty()) {
             QMessageBox::warning(this, "noChoice",
-                                 tr("haven't choose any processing method!"));
+                                 tr("未选择处理算法！"));
             return;
-        }else config.algorithms = selectedChoices;
+        }
+        config.algorithms = selectedChoices;
 
         ProcessingSession* session = taskEngine->execute(config);
 
+        statusLabel->setText(tr("正在批处理..."));
+        progressBar->setRange(0, config.files.size());
+        progressBar->setValue(0);
+        progressBar->setVisible(true);
         okBtn->setEnabled(false); // 冻结按钮
+
         connect(cancelBtn, &QPushButton::clicked, session, &ProcessingSession::cancel);
 
+        connect(session, &ProcessingSession::progressUpdated, this, [this](int current, int total){
+            statusLabel->setText(tr("处理中: %1 / %2").arg(current).arg(total));
+            progressBar->setValue(current);
+        });
         connect(session, &ProcessingSession::sessionFinished, this, [this, session](){
+            statusLabel->setText(tr("批处理完成"));
+            progressBar->setVisible(false);
             okBtn->setEnabled(true); // 解冻
-            statusBar()->showMessage(tr("批处理完成, 已保存文件！"), 3000);
+
+            statusBar()->showMessage(tr("已保存文件！"), 3000);
             session->deleteLater(); // 销毁 Session 对象
         });
     }

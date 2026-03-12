@@ -9,6 +9,7 @@ class QLabel;
 class QLineEdit;
 class QMenu;
 class QAction;
+class QProgressBar;
 class QGraphicsView;
 class QGraphicsScene;
 class QGridLayout;
@@ -26,6 +27,7 @@ public:
     void CreateButton();
     void CreateLabel();
     void CreateLineEdit();
+    void CreateStatusBar();
     void CreateGraphicsView();
     void CreateLayout();
 
@@ -46,6 +48,7 @@ private:
     QPushButton *okBtn, *cancelBtn;
     //labels
     QLabel *roiLabel, *refLabel, *sourceLabel, *outputLabel;
+    QLabel *statusLabel;
     //lineEdits
     QLineEdit *refEdit, *sourceEdit, *outputEdit;
     //menus
@@ -53,6 +56,8 @@ private:
     //actions
     QAction *actionROI, *actionNIPC, *actionZNCC, *actionMSV;
     QAction *actionGLCMcorr, *actionGLCMhomo;
+    //pogressBar
+    QProgressBar *progressBar;
     //graphicsView
     QGraphicsView *graphicsView;
     //layouts
