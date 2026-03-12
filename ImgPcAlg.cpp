@@ -44,6 +44,7 @@ cv::UMat preTreat(const cv::UMat& src, PreTreatClass<PreTreatMethod::Classic> Sc
 BaseAlg::BaseAlg(cv::InputArray img, int f) : m_factor(std::max(1, f)) {
     if (img.empty()) throw std::invalid_argument("Reference image is empty.");
     img.getUMat().convertTo(m_refImg, CV_32F);
+    normalize(m_refImg, m_refImg, 0, 255, cv::NORM_MINMAX, CV_32F);
     cv::UMat tmpImg = preTreat(m_refImg);
     downsample(tmpImg, m_downRef);
 }
@@ -60,7 +61,7 @@ void BaseAlg::downsample(const cv::UMat& src, cv::UMat& dst) const {
 cv::UMat BaseAlg::prepareInput(cv::InputArray input) const {
     cv::UMat in = input.getUMat();
     if (in.size() != m_refImg.size()) throw std::invalid_argument("Input size mismatch.");
-    if (in.type() != CV_32F) in.convertTo(in, CV_32F);
+    normalize(in, in, 0, 255, cv::NORM_MINMAX, CV_32F);
     return in;
 }
 
