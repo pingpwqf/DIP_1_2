@@ -30,7 +30,7 @@ public:
 public slots:
     // 增加 fileName 参数，让结果知道对应哪张图
     void handleResult(QString algName, QString fileName, double value);
-    void saveImage(cv::InputArray);
+    void saveImage(cv::InputArray image,QString fileName, bool ifROI);
     void closeAll();
 
 private:
@@ -41,6 +41,8 @@ private:
     QString m_outputDir;
     QMap<QString, QSharedPointer<QFile>> m_files;
     QMap<QString, QSharedPointer<QTextStream>> m_streams;
+
+    QMap<QString, QSharedPointer<QDir>> m_dir;
 
 signals:
     void allResultsSaved();
@@ -71,7 +73,7 @@ private:
 
 signals:
     void resultReady(QString algName, QString fileName, double value);
-    void imageReady(cv::InputArray img);
+    void imageReady(cv::InputArray img, QString fileName, bool ifROI);
     void finished();
     void errorOccurred(QString msg);
     void resultsSkipped(unsigned size);

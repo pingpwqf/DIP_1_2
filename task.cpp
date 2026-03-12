@@ -41,21 +41,22 @@ void ProcessingTask::run()
             return;
         }
 
+        QString fileName = QFileInfo(m_path).fileName();
+
         // --- 核心改动：应用 ROI ---
         cv::Mat img;
         if (m_roi.width > 0 && m_roi.height > 0) {
-            img = fullImg(m_roi).clone();
-            emit imageReady(img);            // 只处理 ROI 区域
+            img = fullImg(m_roi).clone();            // 只处理 ROI 区域
+            emit imageReady(img, fileName, true);
         } else {
             img = fullImg;
+            emit imageReady(img, fileName, false);
         }
         if (img.empty()) {
             emit resultsSkipped(m_algNames.size());
             emit finished();
             return;
         }
-
-        QString fileName = QFileInfo(m_path).fileName();
 
         // GLCM 缓存逻辑
         std::shared_ptr<GLCM::GLCmat> sharedGlcm = nullptr;
@@ -142,6 +143,7 @@ void ProcessingSession::start(const cv::Mat& refImg, const QStringList& files, c
         ProcessingTask* task = new ProcessingTask(dir.absoluteFilePath(fileName), algs, refImg);
         task->setPCancelled(m_pCancelled);
         task->setROI(roi4Task);
+        connect(task, &ProcessingTask::imageReady, m_collector, &ResultCollector::saveImage);
         connect(task, &ProcessingTask::resultReady, m_collector, &ResultCollector::handleResult);
         // 如果任务内部失败，也要同步计数
         connect(task, &ProcessingTask::resultsSkipped, m_collector, &ResultCollector::decrementExpectedCount);
@@ -272,4 +274,29 @@ void ResultCollector::handleResult(QString algName, QString fileName, double val
     if (m_expectedResults <= 0) {
         emit allResultsSaved();
     }
+}
+
+void ResultCollector::saveImage(cv::InputArray image, QString fileName, bool ifROI)
+{
+    QMutexLocker locker(&m_mutex);
+    cv::Mat newImage(image.getMat().clone()), normalized;
+    QDir dir;
+
+    if(ifROI){
+        QString rawImagesPath = m_outputDir + "/RawImages";
+
+        if(!dir.exists(rawImagesPath)) dir.mkdir(rawImagesPath);
+
+        QString rawFile = rawImagesPath + "/" + fileName;
+        cv::imwrite(rawFile.toLatin1().data(), newImage);
+    }
+
+    QString normalizedImagesPath = m_outputDir + "/NormalizeImages";
+
+    if(!dir.exists(normalizedImagesPath)) dir.mkdir(normalizedImagesPath);
+
+    QString normalizedFile = normalizedImagesPath + "/" +fileName;
+    cv::normalize(newImage, normalized, 0, 255, cv::NORM_MINMAX, CV_8U);
+    cv::imwrite(normalizedFile.toLatin1().data(), normalized);
+
 }
