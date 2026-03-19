@@ -28,13 +28,13 @@ cv::UMat preTreat(const cv::UMat& src, PreTreatClass<PreTreatMethod::Classic> Sc
 
     cv::UMat diff1, diff2, grad;
 
-    // 计算 |f(x,y) - f(x+1,y+1)| [cite: 167]
+    // 计算 |f(x,y) - f(x+1,y+1)|
     cv::absdiff(src(r_tl), src(r1), diff1);
 
-    // 计算 |f(x+1,y) - f(x,y+1)| [cite: 168]
+    // 计算 |f(x+1,y) - f(x,y+1)|
     cv::absdiff(src(r_x1), src(r_y1), diff2);
 
-    // 求和得到最终梯度 G [cite: 168]
+    // 求和得到最终梯度 G
     cv::add(diff1, diff2, grad);
     applyThreshold(grad, threshold);
 

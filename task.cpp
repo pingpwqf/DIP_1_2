@@ -25,6 +25,7 @@ cv::Mat imread_safe(const QString& path)
     return cv::imdecode(buffer, cv::IMREAD_GRAYSCALE);
 }
 
+/********* ProcessingTask *********/
 void ProcessingTask::run()
 {
     if (m_pCancelled && m_pCancelled->load()) {
@@ -94,7 +95,7 @@ void ProcessingTask::run()
     emit finished();
 }
 
-/**********TaskManager************/
+/********** TaskManager ************/
 TaskManager::TaskManager(QString outputPath)
     : m_collector(new ResultCollector(this))
     // m_session(createSession())
@@ -117,7 +118,7 @@ ProcessingSession* TaskManager::execute(const BatchConfig& config)
 }
 
 
-/********ProcessingSession********/
+/******** ProcessingSession ********/
 void ProcessingSession::start(const cv::Mat& refImg, const QStringList& files, const QDir& dir, const QVector<QString>& algs)
 {
     m_totalTasks = files.size();
@@ -167,9 +168,7 @@ void ProcessingSession::cancel()
     }
 }
 
-/*****************
- *ResultCollector*
- *****************/
+/********* ResultCollector *********/
 void ResultCollector::setOutputDir(QString path)
 {
     QMutexLocker locker(&m_mutex);
@@ -207,15 +206,12 @@ void ResultCollector::closeAll()
         }
     }
     m_files.clear();
-    // QCoreApplication::processEvents();
 }
 
 void ResultCollector::abort()
 {
     QMutexLocker locker(&m_mutex);
     m_isAborted = true;
-    // m_expectedResults = 0; // 清空预期，防止后续 handleResult 继续工作
-    // closeAll();            // 立即关闭所有文件句柄
 }
 
 void ResultCollector::resetExpectedCount(int count)
@@ -258,15 +254,12 @@ void ResultCollector::handleResult(QString algName, QString fileName, double val
         } else {
             m_expectedResults--;
             qDebug() << "Failed to open output file:" << fullPath;
-            // QMessageBox::warning(nullptr, "fail",
-            //                      tr(info.toLatin1()));
             return;
         }
     }
 
     if (m_streams.contains(algName)) {
         *m_streams[algName] << fileName << "," << QString::number(value, 'f', 6) << "\n";
-        // m_streams[algName]->flush(); // 强制刷盘，防止崩溃丢失数据
     }
 
     m_expectedResults--;

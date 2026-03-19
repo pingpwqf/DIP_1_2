@@ -18,7 +18,7 @@ extern const int factor;
  */
 enum class PaddingStrategy {
     None,            // 不填充（直接计算，可能较慢）
-    ToOptimalDFT     // 填充至 OpenCV 推荐的最优 DFT 尺寸
+    ToOptimalDFT     // 填充
 };
 
 enum class PreTreatMethod {

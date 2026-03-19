@@ -13,6 +13,7 @@
 
 cv::Mat imread_safe(const QString& path);
 
+/*********************************************/
 // 结果收集器：负责将不同线程产生的数据分类写入文件
 class ResultCollector : public QObject {
     Q_OBJECT
@@ -114,7 +115,7 @@ struct BatchConfig {
     cv::Rect roi;
 };
 
-// 任务管理器
+/***********************************************/
 class TaskManager : public QObject
 {
     Q_OBJECT
