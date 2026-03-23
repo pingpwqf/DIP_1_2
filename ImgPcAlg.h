@@ -122,7 +122,8 @@ namespace GLCM {
     class GLCMcorrAlg final : public GLCMAlg {
     public:
         using GLCMAlg::GLCMAlg;
-        double process(cv::InputArray = cv::noArray()) const override {
+        double process(cv::InputArray = cv::noArray()) const override
+        {
             return m_glcmPtr ? m_glcmPtr->getCorrelation() : 0.0;
         }
     };
@@ -130,7 +131,8 @@ namespace GLCM {
     class GLCMhomoAlg final : public GLCMAlg {
     public:
         using GLCMAlg::GLCMAlg;
-        double process(cv::InputArray = cv::noArray()) const override {
+        double process(cv::InputArray = cv::noArray()) const override
+        {
             return m_glcmPtr ? m_glcmPtr->getHomogeneity() : 0.0;
         }
     };
@@ -154,7 +156,8 @@ public:
         storage[a_name] = creator;
     }
 
-    std::unique_ptr<AlgInterface> get(T a_name, cv::InputArray img){
+    std::unique_ptr<AlgInterface> get(T a_name, cv::InputArray img)
+    {
         std::shared_lock<std::shared_mutex> lock(mutex);
         if(storage.find(a_name) != storage.end()) return storage[a_name](img);
         else {

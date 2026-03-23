@@ -7,49 +7,48 @@ QString CORRNAME = "GLCMcorr",
 
 namespace GLCM
 {
-
     // 内部辅助：计算相位谱
-static cv::Mat getPhaseSpecInternal(cv::InputArray src, int grayLevels, PaddingStrategy strategy)
-{
-    cv::Mat fSrc, mean;
-    src.getMat().convertTo(fSrc, CV_32F);
+    static cv::Mat getPhaseSpecInternal(cv::InputArray src, int grayLevels, PaddingStrategy strategy)
+    {
+        cv::Mat fSrc, mean;
+        src.getMat().convertTo(fSrc, CV_32F);
 
-    cv::medianBlur(fSrc, fSrc, 3);
-    cv::blur(fSrc, mean, cv::Size(21, 21));
-    cv::subtract(fSrc, mean, fSrc);
+        cv::medianBlur(fSrc, fSrc, 3);
+        cv::blur(fSrc, mean, cv::Size(21, 21));
+        cv::subtract(fSrc, mean, fSrc);
 
-    cv::Mat complexImg;
-    if (strategy == PaddingStrategy::ToOptimalDFT) {
-        // 获取最优尺寸（2, 3, 5 的倍数）
-        int optW = cv::getOptimalDFTSize(fSrc.cols);
-        int optH = cv::getOptimalDFTSize(fSrc.rows);
+        cv::Mat complexImg;
+        if (strategy == PaddingStrategy::ToOptimalDFT) {
+            // 获取最优尺寸（2, 3, 5 的倍数）
+            int optW = cv::getOptimalDFTSize(fSrc.cols);
+            int optH = cv::getOptimalDFTSize(fSrc.rows);
 
-        cv::Mat padded;
-        // 采用零填充，BORDER_CONSTANT 保证不引入人为的边缘插值
-        cv::copyMakeBorder(fSrc, padded, 0, optH - fSrc.rows, 0, optW - fSrc.cols,
-                           cv::BORDER_CONSTANT, cv::Scalar::all(0));
-        cv::dft(padded, complexImg, cv::DFT_COMPLEX_OUTPUT);
-    } else {
-        cv::dft(fSrc, complexImg, cv::DFT_COMPLEX_OUTPUT);
+            cv::Mat padded;
+            // 采用零填充，BORDER_CONSTANT 保证不引入人为的边缘插值
+            cv::copyMakeBorder(fSrc, padded, 0, optH - fSrc.rows, 0, optW - fSrc.cols,
+                               cv::BORDER_CONSTANT, cv::Scalar::all(0));
+            cv::dft(padded, complexImg, cv::DFT_COMPLEX_OUTPUT);
+        } else {
+            cv::dft(fSrc, complexImg, cv::DFT_COMPLEX_OUTPUT);
+        }
+
+        std::vector<cv::Mat> planes;
+        cv::split(complexImg, planes);
+
+        cv::Mat phase;
+        cv::phase(planes[0], planes[1], phase);
+
+        // 【关键改进】在归一化和灰度映射前，先裁切回原始有效区域
+        // 这样可以避免填充区的 0 值参与 minMax 统计，从而导致相位压缩
+        phase = phase(cv::Rect(0, 0, fSrc.cols, fSrc.rows));
+
+        // 映射到指定的灰度级 [0, levels-1]
+        cv::normalize(phase, phase, 0, grayLevels - 1, cv::NORM_MINMAX);
+
+        cv::Mat phaseUint;
+        phase.convertTo(phaseUint, CV_8U);
+        return phaseUint;
     }
-
-    std::vector<cv::Mat> planes;
-    cv::split(complexImg, planes);
-
-    cv::Mat phase;
-    cv::phase(planes[0], planes[1], phase);
-
-    // 【关键改进】在归一化和灰度映射前，先裁切回原始有效区域
-    // 这样可以避免填充区的 0 值参与 minMax 统计，从而导致相位压缩
-    phase = phase(cv::Rect(0, 0, fSrc.cols, fSrc.rows));
-
-    // 映射到指定的灰度级 [0, levels-1]
-    cv::normalize(phase, phase, 0, grayLevels - 1, cv::NORM_MINMAX);
-
-    cv::Mat phaseUint;
-    phase.convertTo(phaseUint, CV_8U);
-    return phaseUint;
-}
 
     std::shared_ptr<GLCmat> getPSGLCM(cv::InputArray img, int levels, int dx, int dy, PaddingStrategy strategy)
     {

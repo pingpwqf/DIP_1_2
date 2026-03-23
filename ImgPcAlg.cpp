@@ -44,7 +44,8 @@ cv::UMat preTreat(const cv::UMat& src, PreTreatClass<PreTreatMethod::Classic> Sc
     return grad;
 }
 
-BaseAlg::BaseAlg(cv::InputArray img, int f) : m_factor(std::max(1, f)) {
+BaseAlg::BaseAlg(cv::InputArray img, int f) : m_factor(std::max(1, f))
+{
     if (img.empty()) throw std::invalid_argument("Reference image is empty.");
     img.getUMat().convertTo(m_refImg, CV_32F);          //转换图像数据类型为浮点数
     cv::normalize(m_refImg, m_refImg, 0, 255, cv::NORM_MINMAX, CV_32F);     //将图像拉伸至[0, 255]
@@ -52,7 +53,8 @@ BaseAlg::BaseAlg(cv::InputArray img, int f) : m_factor(std::max(1, f)) {
     downsample(tmpImg, m_downRef);          //获得下采样数据
 }
 
-void BaseAlg::downsample(const cv::UMat& src, cv::UMat& dst) const {
+void BaseAlg::downsample(const cv::UMat& src, cv::UMat& dst) const
+{
     if (m_factor > 1) {
         cv::resize(src, dst, cv::Size(src.cols / m_factor, src.rows / m_factor), 0, 0, cv::INTER_AREA);
     }
@@ -61,7 +63,8 @@ void BaseAlg::downsample(const cv::UMat& src, cv::UMat& dst) const {
     }
 }
 
-cv::UMat BaseAlg::prepareInput(cv::InputArray input) const {
+cv::UMat BaseAlg::prepareInput(cv::InputArray input) const
+{
     cv::UMat in = input.getUMat();
     if (in.size() != m_refImg.size()) throw std::invalid_argument("Input size mismatch.");
     cv::normalize(in, in, 0, 255, cv::NORM_MINMAX, CV_32F);
@@ -69,23 +72,27 @@ cv::UMat BaseAlg::prepareInput(cv::InputArray input) const {
 }
 
 // NIPC: 归一化图像相位相关
-NIPCAlg::NIPCAlg(cv::InputArray img, int f) : BaseAlg(img, f) {
+NIPCAlg::NIPCAlg(cv::InputArray img, int f)
+    : BaseAlg(img, f)
+{
     m_refNorm = cv::norm(m_downRef, cv::NORM_L2);
     if (m_refNorm < 1e-9) throw std::runtime_error("Reference image is invalid (too dark).");
 }
 
-double NIPCAlg::process(cv::InputArray input) const {
-    ensureInputNotEmpty(input);
+double NIPCAlg::process(cv::InputArray input) const
+{
+    ensureInputNotEmpty(input);         //确保process接受的输入非空
     cv::UMat downInput;
-    cv::UMat img = prepareInput(input);
-    downsample(preTreat(img, globalScheme), downInput);
-    double inNorm = cv::norm(downInput, cv::NORM_L2);
+    cv::UMat img = prepareInput(input); //检查输入的图像尺寸是否与参考图像一致，返回拉伸至[0, 255]的input
+    downsample(preTreat(img, globalScheme), downInput);     //预处理和下采样
+    double inNorm = cv::norm(downInput, cv::NORM_L2);       //计算下采样后的欧几里得范数
     if (inNorm < 1e-9) return 0.0;
-    return m_downRef.dot(downInput) / (m_refNorm * inNorm);
+    return m_downRef.dot(downInput) / (m_refNorm * inNorm); //计算NIPC
 }
 
 // ZNCC: 零均值归一化互相关 (优化 GPU 提取分数)
-double ZNCCAlg::process(cv::InputArray input) const {
+double ZNCCAlg::process(cv::InputArray input) const
+{
     ensureInputNotEmpty(input);
     cv::UMat downInput;
     cv::UMat img(prepareInput(input));
@@ -101,8 +108,9 @@ double ZNCCAlg::process(cv::InputArray input) const {
 }
 
 // MSV: 平均绝对差
-double MSVAlg::process(cv::InputArray input) const {
-    ensureInputNotEmpty(input);
-    cv::UMat in = prepareInput(input);
+double MSVAlg::process(cv::InputArray input) const
+{
+    ensureInputNotEmpty(input);         //确保process接受的输入非空
+    cv::UMat in = prepareInput(input);  //检查尺寸并拉伸
     return cv::norm(m_refImg, in, cv::NORM_L1) / static_cast<double>(m_refImg.total());
 }
