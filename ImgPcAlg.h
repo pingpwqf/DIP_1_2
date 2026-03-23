@@ -17,12 +17,12 @@ extern const int factor;
  * 取代原先的 ScaleStrategy，确保不破坏散斑统计特性
  */
 enum class PaddingStrategy {
-    None,            // 不填充（直接计算，可能较慢）
-    ToOptimalDFT     // 填充
+    None,           // 不填充
+    ToOptimalDFT    // 零填充到最优dft尺寸
 };
 
 enum class PreTreatMethod {
-    Classic
+    Classic         // 经典方法（边缘增强和阈值处理）
 };
 
 template<PreTreatMethod method>
@@ -155,7 +155,7 @@ public:
     }
 
     std::unique_ptr<AlgInterface> get(T a_name, cv::InputArray img){
-        std::lock_guard<std::shared_mutex> lock(mutex);
+        std::shared_lock<std::shared_mutex> lock(mutex);
         if(storage.find(a_name) != storage.end()) return storage[a_name](img);
         else {
             return nullptr;

@@ -16,15 +16,18 @@ void applyThreshold(cv::UMat& m, double ratio)
     cv::threshold(m, m, maxVal * ratio, 0, cv::THRESH_TOZERO);
 }
 
-cv::UMat preTreat(const cv::UMat& src, PreTreatClass<PreTreatMethod::Classic> Scheme = globalScheme)
+cv::UMat preTreat(const cv::UMat& src, PreTreatClass<PreTreatMethod::Classic> Scheme)
 {
-    // f(x+1, y+1)
-    cv::Rect r1(1, 1, src.cols - 1, src.rows - 1);
-    cv::Rect r_tl(0, 0, src.cols - 1, src.rows - 1); // 对应 f(x,y) 的匹配区域
+    const int W = src.cols - 1,
+        H = src.rows - 1;
+
+    // f(x+1, y+1) 和 f(x,y)
+    cv::Rect r1(1, 1, W, H);
+    cv::Rect r_tl(0, 0, W, H);
 
     // f(x+1, y) 和 f(x, y+1)
-    cv::Rect r_x1(1, 0, src.cols - 1, src.rows - 1);
-    cv::Rect r_y1(0, 1, src.cols - 1, src.rows - 1);
+    cv::Rect r_x1(1, 0, W, H);
+    cv::Rect r_y1(0, 1, W, H);
 
     cv::UMat diff1, diff2, grad;
 
@@ -34,7 +37,7 @@ cv::UMat preTreat(const cv::UMat& src, PreTreatClass<PreTreatMethod::Classic> Sc
     // 计算 |f(x+1,y) - f(x,y+1)|
     cv::absdiff(src(r_x1), src(r_y1), diff2);
 
-    // 求和得到最终梯度 G
+    // 求和
     cv::add(diff1, diff2, grad);
     applyThreshold(grad, threshold);
 
@@ -43,10 +46,10 @@ cv::UMat preTreat(const cv::UMat& src, PreTreatClass<PreTreatMethod::Classic> Sc
 
 BaseAlg::BaseAlg(cv::InputArray img, int f) : m_factor(std::max(1, f)) {
     if (img.empty()) throw std::invalid_argument("Reference image is empty.");
-    img.getUMat().convertTo(m_refImg, CV_32F);
-    cv::normalize(m_refImg, m_refImg, 0, 255, cv::NORM_MINMAX, CV_32F);
-    cv::UMat tmpImg = preTreat(m_refImg);
-    downsample(tmpImg, m_downRef);
+    img.getUMat().convertTo(m_refImg, CV_32F);          //转换图像数据类型为浮点数
+    cv::normalize(m_refImg, m_refImg, 0, 255, cv::NORM_MINMAX, CV_32F);     //将图像拉伸至[0, 255]
+    cv::UMat tmpImg = preTreat(m_refImg, globalScheme);           //图像预处理
+    downsample(tmpImg, m_downRef);          //获得下采样数据
 }
 
 void BaseAlg::downsample(const cv::UMat& src, cv::UMat& dst) const {
@@ -75,7 +78,7 @@ double NIPCAlg::process(cv::InputArray input) const {
     ensureInputNotEmpty(input);
     cv::UMat downInput;
     cv::UMat img = prepareInput(input);
-    downsample(preTreat(img), downInput);
+    downsample(preTreat(img, globalScheme), downInput);
     double inNorm = cv::norm(downInput, cv::NORM_L2);
     if (inNorm < 1e-9) return 0.0;
     return m_downRef.dot(downInput) / (m_refNorm * inNorm);
@@ -86,7 +89,7 @@ double ZNCCAlg::process(cv::InputArray input) const {
     ensureInputNotEmpty(input);
     cv::UMat downInput;
     cv::UMat img(prepareInput(input));
-    downsample(preTreat(img), downInput);
+    downsample(preTreat(img, globalScheme), downInput);
 
     cv::UMat result;
     cv::matchTemplate(downInput, m_downRef, result, cv::TM_CCOEFF_NORMED);
