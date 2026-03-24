@@ -101,24 +101,24 @@ namespace GLCM
 
     void GLCmat::computeStatistics()
     {
-        // 关键优化：使用 cv::reduce 快速计算边际分布
+        // 使用 cv::reduce 快速计算边际分布
         cv::Mat pX, pY;
-        cv::reduce(m_glcm, pY, 1, cv::REDUCE_SUM); // 对行求和 -> P(i)
-        cv::reduce(m_glcm, pX, 0, cv::REDUCE_SUM); // 对列求和 -> P(j)
+        cv::reduce(m_glcm, pX, 1, cv::REDUCE_SUM); // 对行求和 -> P(i)
+        cv::reduce(m_glcm, pY, 0, cv::REDUCE_SUM); // 对列求和 -> P(j)
 
         m_meanX = 0; m_meanY = 0;
         m_varX = 0; m_varY = 0;
 
         for (int i = 0; i < m_levels; ++i) {
-            float valX = pX.at<float>(0, i);
-            float valY = pY.at<float>(i, 0);
-            m_meanX += i * valX;
-            m_meanY += i * valY;
+            float valX = pX.at<float>(i, 0);
+            float valY = pY.at<float>(0, i);
+            m_meanX += i * valX; // 计算行均值
+            m_meanY += i * valY; // 计算列均值
         }
 
         for (int i = 0; i < m_levels; ++i) {
-            m_varX += std::pow(i - m_meanX, 2) * pX.at<float>(0, i);
-            m_varY += std::pow(i - m_meanY, 2) * pY.at<float>(i, 0);
+            m_varX += std::pow(i - m_meanX, 2) * pX.at<float>(0, i); //计算行方差
+            m_varY += std::pow(i - m_meanY, 2) * pY.at<float>(i, 0); //计算列方差
         }
     }
 
