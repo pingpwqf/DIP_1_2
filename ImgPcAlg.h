@@ -57,7 +57,6 @@ protected:
 
     void downsample(const cv::UMat& src, cv::UMat& dst) const;
     cv::UMat prepareInput(cv::InputArray input) const;
-    // cv::UMat preTreat(const cv::UMat& src, PreTreatClass<PreTreatMethod::Classic> Scheme);
 
     // 检查输入有效性
     void ensureInputNotEmpty(cv::InputArray input) const {
@@ -112,10 +111,14 @@ namespace GLCM {
 
     class GLCMAlg : public AlgInterface {
     public:
+        GLCMAlg(const GLCMAlg&) = delete;
+        GLCMAlg operator=(const GLCMAlg&) = delete;
+        virtual ~GLCMAlg() = default;
+
+    protected:
         GLCMAlg(cv::InputArray img, int levels = 8, int dx = 1, int dy = 0, PaddingStrategy strategy = PaddingStrategy::ToOptimalDFT);
         explicit GLCMAlg(std::shared_ptr<GLCmat> glcmPtr) : m_glcmPtr(glcmPtr) {}
 
-    protected:
         std::shared_ptr<GLCmat> m_glcmPtr;
     };
 
@@ -152,6 +155,8 @@ public:
 
     void Register(T a_name, Creator creator)
     {
+        std::scoped_lock lock(mutex);
+
         if(!nameList.contains(a_name)) nameList.emplaceBack(a_name);
         storage[a_name] = creator;
     }
@@ -159,6 +164,7 @@ public:
     std::unique_ptr<AlgInterface> get(T a_name, cv::InputArray img)
     {
         std::shared_lock<std::shared_mutex> lock(mutex);
+
         if(storage.find(a_name) != storage.end()) return storage[a_name](img);
         else {
             return nullptr;
