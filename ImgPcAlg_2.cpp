@@ -117,8 +117,8 @@ namespace GLCM
         }
 
         for (int i = 0; i < m_levels; ++i) {
-            m_varX += std::pow(i - m_meanX, 2) * pX.at<float>(0, i); //计算行方差
-            m_varY += std::pow(i - m_meanY, 2) * pY.at<float>(i, 0); //计算列方差
+            m_varX += std::pow(i - m_meanX, 2) * pX.at<float>(i, 0); //计算行方差
+            m_varY += std::pow(i - m_meanY, 2) * pY.at<float>(0, i); //计算列方差
         }
     }
 

@@ -111,14 +111,13 @@ namespace GLCM {
 
     class GLCMAlg : public AlgInterface {
     public:
+        GLCMAlg(cv::InputArray img, int levels = 8, int dx = 1, int dy = 0, PaddingStrategy strategy = PaddingStrategy::ToOptimalDFT);
+        explicit GLCMAlg(std::shared_ptr<GLCmat> glcmPtr) : m_glcmPtr(glcmPtr) {}
         GLCMAlg(const GLCMAlg&) = delete;
         GLCMAlg operator=(const GLCMAlg&) = delete;
         virtual ~GLCMAlg() = default;
 
     protected:
-        GLCMAlg(cv::InputArray img, int levels = 8, int dx = 1, int dy = 0, PaddingStrategy strategy = PaddingStrategy::ToOptimalDFT);
-        explicit GLCMAlg(std::shared_ptr<GLCmat> glcmPtr) : m_glcmPtr(glcmPtr) {}
-
         std::shared_ptr<GLCmat> m_glcmPtr;
     };
 
@@ -127,7 +126,7 @@ namespace GLCM {
         using GLCMAlg::GLCMAlg;
         double process(cv::InputArray = cv::noArray()) const override
         {
-            return m_glcmPtr ? m_glcmPtr->getCorrelation() : 0.0;
+            return m_glcmPtr ? m_glcmPtr->getCorrelation() : 0.0; // 检查是否为空指针
         }
     };
 
@@ -136,7 +135,7 @@ namespace GLCM {
         using GLCMAlg::GLCMAlg;
         double process(cv::InputArray = cv::noArray()) const override
         {
-            return m_glcmPtr ? m_glcmPtr->getHomogeneity() : 0.0;
+            return m_glcmPtr ? m_glcmPtr->getHomogeneity() : 0.0; // 检查是否为空指针
         }
     };
 }
