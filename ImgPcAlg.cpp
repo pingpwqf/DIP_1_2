@@ -18,30 +18,25 @@ void applyThreshold(cv::UMat& m, double ratio)
 
 cv::UMat preTreat(const cv::UMat& src, PreTreatClass<PreTreatMethod::Classic> Scheme)
 {
-    const int W = std::max(0, src.cols - 1),    // 确保不越界
-        H = std::max(0, src.rows - 1);
+    cv::UMat grad1, grad2, totalGrad;
 
-    // f(x+1, y+1) 和 f(x,y)
-    cv::Rect r1(1, 1, W, H);
-    cv::Rect r_tl(0, 0, W, H);
+    // 定义卷积核 (留在 CPU 定义，但 filter2D 会将其上传并应用于 GPU 上的 src)
+    cv::Mat k1 = (cv::Mat_<float>(2,2) << 1, 0, 0, -1);
+    cv::Mat k2 = (cv::Mat_<float>(2,2) << 0, 1, -1, 0);
 
-    // f(x+1, y) 和 f(x, y+1)
-    cv::Rect r_x1(1, 0, W, H);
-    cv::Rect r_y1(0, 1, W, H);
+    // 利用 GPU 进行卷积运算
+    // ddepth 使用 CV_32F 以处理减法产生的负值
+    cv::filter2D(src, grad1, CV_32F, k1, cv::Point(0,0));
+    cv::filter2D(src, grad2, CV_32F, k2, cv::Point(0,0));
 
-    cv::UMat diff1, diff2, grad;
+    // 计算绝对值之和
+    cv::absdiff(grad1, cv::Scalar::all(0), grad1);
+    cv::absdiff(grad2, cv::Scalar::all(0), grad2);
+    cv::add(grad1, grad2, totalGrad);
 
-    // 计算 |f(x,y) - f(x+1,y+1)|
-    cv::absdiff(src(r_tl), src(r1), diff1);
+    applyThreshold(totalGrad, threshold);
 
-    // 计算 |f(x+1,y) - f(x,y+1)|
-    cv::absdiff(src(r_x1), src(r_y1), diff2);
-
-    // 求和
-    cv::add(diff1, diff2, grad);
-    applyThreshold(grad, threshold);
-
-    return grad;
+    return totalGrad;
 }
 
 BaseAlg::BaseAlg(cv::InputArray img, int f) : m_factor(std::max(1, f))
