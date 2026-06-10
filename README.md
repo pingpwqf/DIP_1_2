@@ -1,4 +1,4 @@
-本项目是一个专门针对光纤散斑图传感器（Fiber Specklegram Sensor, FSS）设计的跨平台图像批处理与特征分析系统。
+### 本项目是一个专门针对光纤散斑图传感器（Fiber Specklegram Sensor, FSS）设计的跨平台图像批处理与特征分析系统。
 
 ---
 
@@ -9,8 +9,8 @@
    - 所有匹配与特征提取算法统一继承自 `AlgInterface::process` 接口。
 
 2. **丰富的图像分析算法**
-   - **NIPC (归一化图像相位相关)**：提取并计算图像间的频域相位相关度（基于 L2 范数拉伸归一化）。
-   - **ZNCC (零均值归一化互相关)**：使用 OpenCV GPU 加速（`cv::matchTemplate` 与 `cv::UMat`）实现高速、高精度的模板匹配。
+   - **NIPC (归一化内积系数)**：提取并计算图像间的归一化内积系数（基于 L2 范数拉伸归一化）。
+   - **ZNCC (零均值归一化互相关)**：使用 OpenCV GPU 加速（`cv::matchTemplate` 与 `cv::UMat`）实现高速、高精度的相关系数计算。
    - **MSV (平均绝对差)**：计算参考图与输入图之间的 L1 范数平均绝对误差。
    - **GLCM (灰度共生矩阵)**：基于相位谱图像（Phase Spectrum）提取纹理特征，支持多线程缓存复用计算 **GLCMcorr (相关性)** 和 **GLCMhomo (同质性)**。
 
@@ -31,10 +31,10 @@
 
 ## 开发与构建环境要求
 
-- **C++ 标准**：C++19 及以上
+- **C++ 标准**：C++17 及以上
 - **CMake**：最低要求 VERSION 3.19
 - **Qt 框架**：Qt 6.5+ (REQUIRED Components: `Core`, `Widgets`)
-- **OpenCV 框架**：OpenCV 4.x (REQUIRED Components: `core`, `imgproc`, `imgcodecs`)
+- **OpenCV 框架**：OpenCV 4.12 (REQUIRED Components: `core`, `imgproc`, `imgcodecs`)
 - **编译器**：MSVC (Windows) / GCC (Linux) / Clang (macOS)
 
 ---
@@ -43,9 +43,14 @@
 
 项目支持通过 `CMake` 自动调用 Qt 官方的部署脚本。在 Windows 平台上还会自动扫描环境变量，确保拷贝关键的第三方 DLL（如 `avif.dll`, `dav1d.dll`）。
 
-### 1. 编译项目
+## 1. 编译项目
 ```bash
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 cmake --build .
+```
+### 2. 独立打包部署
+```bash
+cmake --install . --prefix "D:/DIP_Distribute"
+```
